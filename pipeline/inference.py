@@ -34,7 +34,7 @@ from pipeline.engines.intersection import extract_damage_instances, ANATOMY_ID_T
 from pipeline.engines.missing_parts import detect_missing_parts
 from pipeline.engines.severity import geometric_severity, classifier_severity, fuse_severity
 from pipeline.engines.rules import classify_functional_cosmetic
-from pipeline.engines.uncertainty import mc_inference, tta_mc_inference, get_confidence_per_instance
+from pipeline.engines.uncertainty import mc_inference, get_confidence_per_instance
 from pipeline.engines.vlm_context import VLMContextEngine
 from pipeline.engines.vlm_rationale import generate_rationale
 from pipeline.engines.vlm_fusion import fuse_vlm_with_damages
@@ -196,7 +196,7 @@ class DamagePipeline:
         # ── 4. Model Inference (MC Dropout) ───────────────────────────────
         tensor = self.preprocess(enhanced_bgr)
 
-        uncertainty_info = tta_mc_inference(
+        uncertainty_info = mc_inference(
             self.backbone, self.decoder, tensor,
             n_passes=MC_DROPOUT_PASSES
         )

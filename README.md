@@ -98,7 +98,7 @@ Each module in the pipeline follows a consistent structure:
 ```
 module_name/
 ├── __init__.py
-├── config.py          # Module-specific configuration
+├── config.py          # Module-specific configurations
 ├── processor.py       # Core processing logic
 └── utils.py          # Helper functions and utilities
 ```

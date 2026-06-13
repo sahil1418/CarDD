@@ -59,7 +59,6 @@ class QualityReport:
     is_matte_paint: bool = False
     has_mud_patches: bool = False
     has_water_droplets: bool = False       # flagged but not fixable
-    has_complex_shadows: bool = False      # dappled/striped shadows
 
     # VLM context (populated by VLMContextEngine, if available)
     vlm_context: dict = field(default_factory=dict)
@@ -81,7 +80,6 @@ class QualityReport:
                 "matte_paint": self.is_matte_paint,
                 "mud_patches": self.has_mud_patches,
                 "water_droplets": self.has_water_droplets,
-                "complex_shadows": self.has_complex_shadows,
             },
         }
         result["vlm_context"] = self.vlm_context
@@ -194,43 +192,6 @@ def assess_matte_paint(gray: np.ndarray) -> bool:
 
     # Matte: top highlights are very uniform (low variance)
     return top_var < 50  # threshold tuned down to prevent glossy cars flagging as matte
-
-
-def assess_complex_shadows(gray: np.ndarray) -> bool:
-    """
-    Detect complex dappled or striped shadows (e.g. from trees or fences).
-    These often cause false-positive scratch detections.
-    Uses adaptive thresholding and contour shape analysis.
-    """
-    # Isolate local dark regions (shadows)
-    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-                                   cv2.THRESH_BINARY_INV, 51, 15)
-    
-    # Find shadow shapes
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
-    suspicious_shadow_area = 0
-    total_area = gray.shape[0] * gray.shape[1]
-    
-    for cnt in contours:
-        area = cv2.contourArea(cnt)
-        if area < 50 or area > total_area * 0.05:
-            continue  # Too small or too massive (like a building shadow)
-            
-        x, y, w, h = cv2.boundingRect(cnt)
-        aspect_ratio = max(w, 1) / max(h, 1)
-        if aspect_ratio < 1:
-            aspect_ratio = 1 / aspect_ratio
-            
-        # Striped shadows = high aspect ratio. Tree shadows = highly irregular perimeter.
-        perimeter = cv2.arcLength(cnt, True)
-        circularity = 4 * np.pi * (area / max(perimeter * perimeter, 1))
-        
-        if aspect_ratio > 4 or circularity < 0.2:
-            suspicious_shadow_area += area
-            
-    # Flag if these complex shadows cover > 3% of the image
-    return (suspicious_shadow_area / total_area) > 0.03
 
 
 def assess_water_droplets(gray: np.ndarray) -> bool:
@@ -436,13 +397,6 @@ def run_quality_gate(image: np.ndarray, file_path: str = None) -> QualityReport:
         report.warnings.append(
             "Water droplets detected on surface — "
             "may interfere with scratch/crack predictions"
-        )
-
-    # ── 10. Complex Shadow Detection ──────────────────────────────────────
-    report.has_complex_shadows = assess_complex_shadows(gray)
-    if report.has_complex_shadows:
-        report.warnings.append(
-            "Complex/dappled shadowing detected — scratch predictions may be false positives"
         )
 
     return report

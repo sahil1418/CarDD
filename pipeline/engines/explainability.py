@@ -32,7 +32,7 @@ ANATOMY_COLOURS = {
     "hood_trunk": (255, 150, 50),
     "glass":      (150, 255, 255),
     "lamp_mirror":(255, 100, 255),
-    "wheel":      (200, 200, 200), 
+    "wheel":      (200, 200, 200),
 }
 
 

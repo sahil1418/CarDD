@@ -81,13 +81,6 @@ def classify_functional_cosmetic(instance: DamageInstance,
                     "Matte paint — dent prediction more reliable"
                 )
 
-        if "shadowing" in w.lower() or "dappled" in w.lower():
-            if damage_type == "scratch":
-                result["confidence_modifier"] *= 0.75
-                result["disclaimers"].append(
-                    "Complex shadows present — possible false scratch prediction"
-                )
-
     # ── Rule 1: severe_break on ANY part is always functional ─────────────
     if damage_type in ALWAYS_FUNCTIONAL:
         result["classification"] = "functional"
